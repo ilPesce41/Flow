@@ -3,7 +3,7 @@
 # include <string>
 # include <iostream>
 using namespace std;
-void convert_vec_double(vector<string> vec, double * output)
+void convert_vec_float(vector<string> vec, float * output)
 {
     for(int i=0;i<vec.size();i++)
     {

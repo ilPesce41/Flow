@@ -3,4 +3,4 @@
 # include <string>
 using namespace std;
 
-void convert_vec_double(vector<string> vec, double * output);
+void convert_vec_float(vector<string> vec, float * output);

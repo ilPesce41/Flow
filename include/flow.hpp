@@ -10,9 +10,9 @@ class FlowData{
     public:
         FlowData(const char* filename, string sx_col, string sy_col, string dx_col, string dy_col, string length_col);
         long int length;
-        double * sx;
-        double * sy;
-        double * dx;
-        double * dy;
-        double * L;
+        float * sx;
+        float * sy;
+        float * dx;
+        float * dy;
+        float * L;
 };
