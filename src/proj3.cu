@@ -137,7 +137,59 @@ __global__ void calculate_spatial_distance_matrix(float * d_sx,float * d_sy,floa
 	
 }
 
+/*
+Insertion sort, keeps track of indices
+*/
+void insertion_sort(float * dist, int * indices,int len)
+{
+    for(int i=1;i<len;i++)
+    {
+        float dist_val = dist[i];
+        int index_val = indices[i];
+        for(int j=1;j<=i;j++)
+        {
+            if(dist[i-j]>dist_val)
+            {
+                dist[i-j+1] = dist[i-j];
+                indices[i-j+1] = indices[i-j];
+                dist[i-j] = dist_val;
+                indices[i-j] = index_val;
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+}
 
+/*
+Naiive KNN on CPU using distance matrix
+*/
+void get_k_nearest_neighbors(int k,int flow_idx,int length,float * distance_matrix)
+{
+    int neighbors[k+1];
+    float distances[k+1];
+    for(int i=0;i<k+1;i++)
+    {
+        neighbors[i] = i;
+        distances[i] = distance_matrix[i];
+    }
+    insertion_sort(distances,neighbors,k+1);
+    for(int i=k;i<length;i++)
+    {
+        if(distance_matrix[i]<distances[k-1])
+        {
+            distances[k] = distance_matrix[i];
+            neighbors[k] = i;
+            insertion_sort(distances,neighbors,k+1);
+        }
+    }
+    for (int i=0;i<k;i++)
+    {
+        cout << i << " Distance: " << distances[i] << " Index: " << neighbors[i]<< endl;
+    }
+}
 
 int main(int argc, char **argv)
 {
@@ -156,7 +208,7 @@ int main(int argc, char **argv)
     string dx_col("Dropoff_latitude");
     string dy_col("Dropoff_longitude");
     string length_col("Trip_distance");
-    int block_dim = 256;
+    int block_dim = 128;
     float alpha = 1.0; //weighting between origin and destination 1.0=even
     int func_type = 0; // 0=flow_distance, 1=flow_dissimilarity
 
@@ -181,7 +233,7 @@ int main(int argc, char **argv)
 	cudaMemcpy(d_L, flow.L, flow.length*sizeof(float), cudaMemcpyHostToDevice);
     cout << "Data on GPU" <<endl;
 
-    size_t shared_mem_size = 9*block_dim*sizeof(float);
+    size_t shared_mem_size = 10*block_dim*sizeof(float);
 
 	// create output space
 	float * dist_matrix_gpu;
@@ -194,14 +246,15 @@ int main(int argc, char **argv)
 
     float * dist_matrix_cpu = (float*)malloc(flow.length*flow.length*sizeof(float));
 	cudaMemcpy(dist_matrix_cpu, dist_matrix_gpu, flow.length*flow.length*sizeof(float), cudaMemcpyDeviceToHost);
-    for(int i=0;i<flow.length;i++)
-    {
-        for(int j=0;j<flow.length;j++)
-        {
-            cout << dist_matrix_cpu[i*flow.length+j] << " ";
-        }
-        cout << endl;
-    }
+    // for(int i=0;i<3;i++)
+    // {
+    //     for(int j=0;j<flow.length;j++)
+    //     {
+    //         cout << dist_matrix_cpu[i*flow.length+j] << " ";
+    //     }
+    //     cout << endl;
+    // }
+    get_k_nearest_neighbors(5,0,flow.length,dist_matrix_cpu);
 
     /*
     Process Data
