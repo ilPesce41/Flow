@@ -1,5 +1,5 @@
-proj3: flow.o utils.o
-	nvcc  ./src/proj3.cu csv.o flow.o utils.o -o proj3 -I ./include
+proj3: flow.o utils.o knn.o
+	nvcc ./src/flow_k.cu ./src/spatial_distance.cu ./src/proj3.cu csv.o flow.o utils.o knn.o -lineinfo -o proj3 -I ./include
 
 flow.o: csv.o
 	g++ -c ./src/flow.cpp -I ./include
@@ -10,5 +10,10 @@ utils.o:
 csv.o:
 	g++ -c ./src/csv.cpp -I ./include
 
+knn.o:
+	g++ -c ./src/knn.cpp -I ./include
+
+
 clean:
-	rm -f proj3 csv.o utils.o flow.o
+	rm ./*.o
+	rm ./proj3
