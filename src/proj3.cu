@@ -37,10 +37,10 @@ int main(int argc, char **argv)
     int func_type = 0; // 0=flow_distance, 1=flow_dissimilarity
     size_t shared_mem_size = 10*block_dim*sizeof(float);
 
+    cout << "Loading flows" << endl;
     FlowData flow_1(filename_1, sx_col, sy_col, dx_col, dy_col, length_col);
     FlowData flow_2(filename_2, sx_col, sy_col, dx_col, dy_col, length_col);
-
-
+    
     /*
     Load Data
     */
@@ -104,10 +104,10 @@ int main(int argc, char **argv)
     // vector<int> clusters = process_flow_k(flow, d_sx, d_sy, d_dx, d_dy, d_L, dist_matrix_cpu, dist_matrix_gpu, 100,func_type,alpha,shared_mem_size,0.17);
     // cout << clusters.size() << endl;
 
-    vector<int> clusters = process_cross_flow_k(flow_1, flow_2, 1000,func_type,alpha,shared_mem_size,0.15);
-    cout << clusters.size() << endl;
-    for(int i=0;i<clusters.size();i++)
-    {
-        cout << clusters[i] << endl;
-    }
+    // vector<int> clusters = process_cross_flow_k(flow_1, flow_2, 1000,func_type,alpha,shared_mem_size,0.15);
+    // cout << clusters.size() << endl;
+    // for(int i=0;i<clusters.size();i++)
+    // {
+    //     cout << clusters[i] << endl;
+    // }
 }

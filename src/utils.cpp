@@ -13,6 +13,19 @@ void convert_vec_float(vector<string> vec, float * output)
     }
 }
 
+void mask_array(float * input_array, float * output_array, int * mask_array, int length)
+{
+    int idx = 0;
+    for(int i=0;i<length;i++)
+    {
+        if(mask_array[i])
+        {
+            output_array[idx] = input_array[i];
+            idx++;
+        }
+    }
+}
+
 float get_min(float * arr,int length)
 {
     float min_value = arr[0];
