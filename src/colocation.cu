@@ -115,22 +115,19 @@ int purge_fclp(int *members,int *features,int *neighbors,float frequency_thresho
     for(int i=0;i<table_length;i++)
     {
         if (find(bad_features.begin(), bad_features.end(), feature_index[idx]) != bad_features.end()) {
-            //delete entry from table and copy row below up
-            if(idx<table_length-1)
-            {
-                for(int w=0;w<k;w++)
-                {
-                    members[idx*k+w] = members[(idx+1)*k+w];
-                    features[idx*k+w] = features[(idx+1)*k+w];
-                }
-                for(int w=0;w<max_degree;w++)
-                {
-                    neighbors[idx*max_degree+w] = members[(idx+1)*max_degree+w];
-                }
-            }
+            //do nothing
         }
         else {
-            //do nothing
+            //copy row to first open spot and increment table length
+            for(int w=0;w<k;w++)
+            {
+                members[idx*k+w] = members[i*k+w];
+                features[idx*k+w] = features[i*k+w];
+            }
+            for(int w=0;w<max_degree;w++)
+            {
+                neighbors[idx*max_degree+w] = members[i*max_degree+w];
+            }
             idx++;
         }
     }
