@@ -59,6 +59,7 @@ float get_max(float * arr,int length)
     return max_value;
 }
 
+
 float get_max(float * arr,int start, int stop)
 {
     float max_value = arr[0];

@@ -24,6 +24,18 @@ __device__ float flow_disimilarity(float alpha, float xi, float yi, float ui, fl
     return sqrt((alpha*(x_diff*x_diff + y_diff*y_diff) + (2-alpha)*(u_diff*u_diff + v_diff*v_diff))/(Li*Lj));
 }
 
+/*
+  distance function on GPU
+*/
+__device__ float flow_max_distance(float xi, float yi, float ui, float vi, float xj, float yj, float uj, float vj) {
+	float x_diff = xi-xj;
+	float y_diff = yi-yj;
+	float u_diff = ui-uj;
+	float v_diff = vi-vj;
+    
+    return max(sqrt(x_diff*x_diff + y_diff*y_diff),sqrt(u_diff*u_diff + v_diff*v_diff));
+}
+
 __global__ void calculate_spatial_distance_matrix(float * d_sx,float * d_sy,float * d_dx,float * d_dy,float * d_L,float * dist_matrix, int length, float alpha, int func){
 	int i = blockDim.x*blockIdx.x + threadIdx.x;
 	float dist;
@@ -86,12 +98,16 @@ __global__ void calculate_spatial_distance_matrix(float * d_sx,float * d_sy,floa
 			{
                 if(func==0)
                 {
-				    dist = flow_distance(1.0f,x1,y1,u1,v1,R_x[t],R_y[t],R_u[t],R_v[t]);
+				    dist = flow_distance(alpha,x1,y1,u1,v1,R_x[t],R_y[t],R_u[t],R_v[t]);
                 }
-                else
+                else if(func==1)
                 {
-				    dist = flow_disimilarity(1.0f,x1,y1,u1,v1,L1,R_x[t],R_y[t],R_u[t],R_v[t],R_L[t]);
+				    dist = flow_disimilarity(alpha,x1,y1,u1,v1,L1,R_x[t],R_y[t],R_u[t],R_v[t],R_L[t]);
                 }
+				else
+				{
+				    dist = flow_max_distance(x1,y1,u1,v1,R_x[t],R_y[t],R_u[t],R_v[t]);
+				}
                 dist_matrix[i*length + j] = dist;
                 dist_matrix[j*length + i] = dist;
 			}
@@ -111,10 +127,14 @@ __global__ void calculate_spatial_distance_matrix(float * d_sx,float * d_sy,floa
                 {
 				    dist = flow_distance(alpha,x1,y1,u1,v1,B_x[t],B_y[t],B_u[t],B_v[t]);
                 }
-                else
+                else if(func==1)
                 {
 				    dist = flow_disimilarity(alpha,x1,y1,u1,v1,L1,B_x[t],B_y[t],B_u[t],B_v[t],B_L[t]);
                 }
+				else
+				{
+				    dist = flow_max_distance(x1,y1,u1,v1,B_x[t],B_y[t],B_u[t],B_v[t]);
+				}
                 dist_matrix[i*length + j] = dist;
                 dist_matrix[j*length + i] = dist;
 			}
