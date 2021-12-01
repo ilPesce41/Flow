@@ -75,4 +75,4 @@ apply 2
 knn 0 5 1 0 1.0 knn_out.csv
 flow_k 0 1000 0 1 .1 flow_k_out.csv
 cross_flow_k 0 1 1000 0 1.0 .1 cross_flow_k.csv
-extract_colocation_patterns .1 .01 colocation_out.csv
+colocation .3 .02 colocation_out.csv

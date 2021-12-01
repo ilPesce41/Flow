@@ -44,7 +44,20 @@ void knn(FlowData flow, int k, int flow_idx,int func_type, float alpha,string fi
 
     float * dist_matrix_cpu = (float*)malloc(flow.length*flow.length*sizeof(float));
 	cudaMemcpy(dist_matrix_cpu, dist_matrix_gpu, flow.length*flow.length*sizeof(float), cudaMemcpyDeviceToHost);
-    get_k_nearest_neighbors(k, flow_idx, flow.length, dist_matrix_cpu);
+    KNNResult result = get_k_nearest_neighbors(k, flow_idx, flow.length, dist_matrix_cpu);
+
+    ofstream output_file;
+    output_file.open(filename);
+    output_file << "sx,sy,dx,dy,L,distance\n";
+    for(int i=0;i<k;i++)
+    {
+        output_file << flow.sx[result.neighbors[i]] << ",";
+        output_file << flow.sy[result.neighbors[i]] << ",";
+        output_file << flow.dx[result.neighbors[i]] << ",";
+        output_file << flow.dy[result.neighbors[i]] << ",";
+        output_file << flow.L[result.neighbors[i]] << ",";
+        output_file << result.distances[i] << "\n";
+    }
     cudaDeviceReset();
 }
 
@@ -63,7 +76,18 @@ void flow_k(FlowData flow, int num_iter, int func_type,float alpha,float radius,
 	cudaMalloc((void**)&dist_matrix_gpu, flow.length*flow.length*sizeof(float));
 	cudaMemset(dist_matrix_gpu, 0, flow.length*flow.length*sizeof(float));
 
-    process_flow_k(flow, d_sx, d_sy, d_dx, d_dy, d_L, dist_matrix_gpu, num_iter, func_type, alpha, shared_mem_size, radius);
+    vector<int> result = process_flow_k(flow, d_sx, d_sy, d_dx, d_dy, d_L, dist_matrix_gpu, num_iter, func_type, alpha, shared_mem_size, radius);
+    ofstream output_file;
+    output_file.open(filename);
+    output_file << "sx,sy,dx,dy,L\n";
+    for(int i=0;i<result.size();i++)
+    {
+        output_file << flow.sx[result[i]] << ",";
+        output_file << flow.sy[result[i]] << ",";
+        output_file << flow.dx[result[i]] << ",";
+        output_file << flow.dy[result[i]] << ",";
+        output_file << flow.L[result[i]] << "\n";
+    }
     cudaDeviceReset();
 }
 
@@ -71,7 +95,39 @@ void cross_flow_k(FlowData flow_1, FlowData flow_2, int num_iter, int func_type,
 {
     cudaDeviceReset();
     size_t shared_mem_size = 10*BLOCK_DIM*sizeof(float);
-    process_cross_flow_k(flow_1, flow_2, num_iter, func_type, alpha, shared_mem_size, radius);
+    vector<int> result = process_cross_flow_k(flow_1, flow_2, num_iter, func_type, alpha, shared_mem_size, radius);
+    ofstream output_file;
+    output_file.open(filename);
+    output_file << "sx,sy,dx,dy,L\n";
+    bool in_flow_1 = true;
+    for(int i=0;i<result.size();i++)
+    {
+        int res = result[i];
+        if(res==-1)
+        {
+            in_flow_1=false;
+            output_file << "\n";
+        }
+        else
+        {
+            if(in_flow_1)
+            {
+                output_file << flow_1.sx[result[i]] << ",";
+                output_file << flow_1.sy[result[i]] << ",";
+                output_file << flow_1.dx[result[i]] << ",";
+                output_file << flow_1.dy[result[i]] << ",";
+                output_file << flow_1.L[result[i]] << "\n";
+            }
+            else
+            {
+                output_file << flow_2.sx[result[i]] << ",";
+                output_file << flow_2.sy[result[i]] << ",";
+                output_file << flow_2.dx[result[i]] << ",";
+                output_file << flow_2.dy[result[i]] << ",";
+                output_file << flow_2.L[result[i]] << "\n";
+            }
+        }
+    }
     cudaDeviceReset();
 }
 
@@ -79,7 +135,25 @@ void extract_colocation_patterns(vector<FlowData> flows,float frequency_threshol
 {
     cudaDeviceReset();
     size_t shared_mem_size = 10*BLOCK_DIM*sizeof(float);
-    colocate(flows,frequency_threshold, spatial_threshold,shared_mem_size);
+    ColocationResult result = colocate(flows,frequency_threshold, spatial_threshold,shared_mem_size);
+    ofstream output_file;
+    output_file.open(filename);
+    output_file << "K = "<<result.k << "\n";
+    output_file << "index,class,sx,sy,dx,dy,L\n";
+    for(int i=0;i<result.length;i++)
+    {
+        int index = result.indices[i];
+        int class_val = result.class_lookup[index];
+        index = result.index_lookup[index];
+        output_file << index << ",";
+        output_file << class_val << ",";
+        FlowData flow = flows[class_val];
+        output_file << flow.sx[index] << ",";
+        output_file << flow.sy[index] << ",";
+        output_file << flow.dx[index] << ",";
+        output_file << flow.dy[index] << ",";
+        output_file << flow.L[index] << "\n";
+    }
     cudaDeviceReset();
 }
 
@@ -181,11 +255,4 @@ int main(int argc, char **argv)
         }
         line_number++;
     }
-
-
-
-
-    
-    
-
 }

@@ -3,6 +3,13 @@
 
 using namespace std;
 
+KNNResult::KNNResult(int k)
+{
+    distances = (float *)malloc(k*sizeof(float));
+    neighbors = (int *)malloc(k*sizeof(int));
+}
+
+
 /*
 Insertion sort, keeps track of indices
 */
@@ -32,7 +39,7 @@ void insertion_sort(float * dist, int * indices,int len)
 /*
 Naiive KNN on CPU using distance matrix from GPU
 */
-void get_k_nearest_neighbors(int k,int flow_idx,int length,float * distance_matrix)
+KNNResult get_k_nearest_neighbors(int k,int flow_idx,int length,float * distance_matrix)
 {
     int neighbors[k+1];
     float distances[k+1];
@@ -51,9 +58,12 @@ void get_k_nearest_neighbors(int k,int flow_idx,int length,float * distance_matr
             insertion_sort(distances,neighbors,k+1);
         }
     }
+    KNNResult result(k);
     for (int i=0;i<k;i++)
     {
-        cout << i << " Distance: " << distances[i] << " Index: " << neighbors[i]<< endl;
+        result.distances[i] = distances[i];
+        result.neighbors[i] = neighbors[i];
     }
+    return result;
 }
 

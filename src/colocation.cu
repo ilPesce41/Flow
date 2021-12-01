@@ -248,7 +248,7 @@ __global__ void sum_rows(float * matrix,int * sum_arr,int length)
 
 }
 
-void colocate(vector<FlowData> flows,float frequency_threshold, float spatial_threshold, size_t shared_mem_size)
+ColocationResult colocate(vector<FlowData> flows,float frequency_threshold, float spatial_threshold, size_t shared_mem_size)
 {
 
     //Ensure we have a fresh device
@@ -268,7 +268,8 @@ void colocate(vector<FlowData> flows,float frequency_threshold, float spatial_th
 	cudaMalloc((void**)&d_dx, length*sizeof(float));
 	cudaMalloc((void**)&d_dy, length*sizeof(float));
 	cudaMalloc((void**)&d_L, length*sizeof(float));
-    int class_lookup[length];
+    int * class_lookup = (int *)malloc(length*sizeof(int));
+    int * index_lookup = (int *)malloc(length*sizeof(int));
     int * class_frequency = (int * )malloc(flows.size()*sizeof(int));
     for(int i=0;i<flows.size();i++){class_lookup[i] = 0;}
 
@@ -286,6 +287,7 @@ void colocate(vector<FlowData> flows,float frequency_threshold, float spatial_th
         for(int j=0;j<flow.length;j++)
         {
             class_lookup[start_idx+j] = i;
+            index_lookup[start_idx+j] = j;
             class_frequency[i]++;
         }
     }
@@ -305,9 +307,7 @@ void colocate(vector<FlowData> flows,float frequency_threshold, float spatial_th
 	
     // Get maximum degree of flow neighbor graph
     int * number_neighbors;
-    int * number_neighbors_cpu;
     cudaMalloc((void**)&number_neighbors, length*sizeof(int));
-    number_neighbors_cpu = (int *)malloc( length*sizeof(int));
 	cudaMemset(number_neighbors, 0, length*sizeof(int));
 
     // sum_rows <<< ceil((float)(length*length)/(2*128)) , 128 >>>(dist_matrix_gpu,number_neighbors,length);
@@ -338,7 +338,7 @@ void colocate(vector<FlowData> flows,float frequency_threshold, float spatial_th
     /*
     Initialize adjacency list structure
     */
-    int * adj_list_gpu, *adj_list_cpu;
+    int *adj_list_cpu;
     // cudaMalloc((void**)&adj_list_gpu, length*max_degree*sizeof(int));
 	// cudaMemset(number_neighbors, -1, length*max_degree*sizeof(int));
     adj_list_cpu = (int*)malloc(length*max_degree*sizeof(int));
@@ -394,14 +394,19 @@ void colocate(vector<FlowData> flows,float frequency_threshold, float spatial_th
     }
 
 
-    cout << "Starting FCLP" << endl;
     /*
     Iteratively build FCLP tables
     */
     int pair_count_old=length;
-    for(int k=2;k<flows.size();k++)
+    int k_val=2;
+    for(int k=2;k<flows.size()+1;k++)
     {
-        cout << "Staring K=" << k << endl;
+        if(k>2)
+        {
+            free(members_);
+            free(features_);
+            free(neighbors_);
+        }
         members_ = members;
         features_ = features;
         neighbors_ = neighbors;
@@ -410,9 +415,7 @@ void colocate(vector<FlowData> flows,float frequency_threshold, float spatial_th
         features = (int *)malloc(k*pair_count*sizeof(int));
         neighbors = (int *)malloc(max_degree*pair_count*sizeof(int));
         for(int i=0;i<max_degree*pair_count;i++){neighbors[i]=-1;}
-        cout << pair_count_old << " " << pair_count << endl;
         int table_length = build_fclp(members_,features_,neighbors_,members,features,neighbors,adj_list_cpu,k,pair_count_old,max_degree,class_lookup);
-        cout << " ping " << endl;
         table_length = purge_fclp(members,features,neighbors,frequency_threshold,k,max_degree,table_length,class_frequency);
         pair_count_old=table_length;
         pair_count = get_max_pair_count(neighbors,table_length,max_degree);
@@ -420,8 +423,13 @@ void colocate(vector<FlowData> flows,float frequency_threshold, float spatial_th
         {
             cout << "plateued" << endl;
             break;
-        }
+        }else{k_val++;}
     }
-    cout << "Done" << endl;
 
+    ColocationResult result(k_val);
+    result.indices = members_;
+    result.class_lookup = class_lookup;
+    result.index_lookup = index_lookup;
+    result.length = pair_count_old;
+    return result;
 }

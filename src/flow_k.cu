@@ -117,13 +117,7 @@ std::vector<int> process_flow_k(FlowData flow, float *d_sx, float *d_sy, float *
     cudaMalloc((void**)&sig_vec, flow.length*sizeof(float));
     calculate_k_function<<< ceil((float)flow.length/128) , 128 >>>(dist_matrix_gpu,sig_vec,radius,flow.area,flow.length);
 	cudaMemcpy(sig_vec_real, sig_vec, flow.length*sizeof(float), cudaMemcpyDeviceToHost);
-    for(int j=0;j<10;j++)
-        {
-            std::cout << sig_vec_real[j] << " ";
-        }
-    std::cout << std::endl;
-    std::cout << std::endl;
-
+    
     //Generate synthetic data
     float upper_envelope, lower_envelope;
     for (int ii=0;ii<num_iter;ii++)
@@ -219,12 +213,6 @@ std::vector<int> process_cross_flow_k(FlowData flow_1, FlowData flow_2, int num_
     cudaMalloc((void**)&sig_vec, length*sizeof(float));
     calculate_cross_k_function<<< ceil((float)length/128) , 128 >>>(dist_matrix_gpu,sig_vec,radius,A,length,flow_1.length);
 	cudaMemcpy(sig_vec_real, sig_vec, length*sizeof(float), cudaMemcpyDeviceToHost);
-    for(int j=0;j<10;j++)
-        {
-            std::cout << sig_vec_real[j] << " ";
-        }
-    std::cout << std::endl;
-    std::cout << std::endl;
 
     //Generate synthetic data
     float upper_envelope_1, lower_envelope_1;
@@ -279,7 +267,7 @@ std::vector<int> process_cross_flow_k(FlowData flow_1, FlowData flow_2, int num_
     {
         if(sig_vec_real[i]>upper_envelope_2)
         {
-            output.push_back(i);
+            output.push_back(i-flow_1.length);
         }
     }
     return output;
