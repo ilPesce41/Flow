@@ -41,7 +41,7 @@ void merge_neighbors(int * combined_list, int * list_1, int * list_2, int * clas
     }
 }
 
-int build_fclp(int * members_,int * features_,int * neighbors_,int * members,int * features,int * neighbors,int * adj_list, int k, int pair_count, int max_degree,int * class_lookup)
+int build_fclp(int * members,int * features, int * neighbors,int * members_,int * features_,int * neighbors_,int * adj_list, int k, int pair_count, int max_degree,int * class_lookup)
 {
     int index = 0;
     for(int i=0;i<pair_count;i++)
@@ -49,20 +49,21 @@ int build_fclp(int * members_,int * features_,int * neighbors_,int * members,int
         for(int j=0;j<max_degree;j++)
         {
             int neighbor = neighbors[i*max_degree + j];
-            
             //No neighbor case
             if(neighbor==-1)
+            {
                 break;
+            }
             
             for(int w=0;w<k-1;w++)
             {
-                members[index*k+w] = members_[i*(k-1)+w];
-                features[index*k+w] = features_[i*(k-1)+w];
+                members_[index*k+w] = members[i*(k-1)+w];
+                features_[index*k+w] = features[i*(k-1)+w];
             }
-            members[index*k+k-1] = neighbor;
-            features[index*k+k-1] = class_lookup[neighbor];
-            merge_neighbors(neighbors+index*max_degree,neighbors_+i*max_degree,adj_list+neighbor*max_degree,class_lookup,max_degree,class_lookup[neighbor]);
-            index++;            
+            members_[index*k+k-1] = neighbor;
+            features_[index*k+k-1] = class_lookup[neighbor];
+            merge_neighbors(neighbors_+index*max_degree,neighbors+i*max_degree,adj_list+neighbor*max_degree,class_lookup,max_degree,class_lookup[neighbor]);
+            index++;      
         }
     }
     return index;
@@ -86,7 +87,7 @@ int purge_fclp(int *members,int *features,int *neighbors,float frequency_thresho
             if (feature_patterns[j].is_equivalent(set))
             {
                 in_set = true;
-                feature_patterns_count[i]++;
+                feature_patterns_count[j] = feature_patterns_count[j] + 1;
                 feature_index[i] = j;
             }
         }
@@ -111,6 +112,7 @@ int purge_fclp(int *members,int *features,int *neighbors,float frequency_thresho
             bad_features.push_back(i);
         }
     }
+
     int idx = 0;
     for(int i=0;i<table_length;i++)
     {
@@ -126,7 +128,7 @@ int purge_fclp(int *members,int *features,int *neighbors,float frequency_thresho
             }
             for(int w=0;w<max_degree;w++)
             {
-                neighbors[idx*max_degree+w] = members[i*max_degree+w];
+                neighbors[idx*max_degree+w] = neighbors[i*max_degree+w];
             }
             idx++;
         }
@@ -146,9 +148,10 @@ int get_max_pair_count(int * neighbors,int length,int max_degree)
         for(int j=0;j<max_degree;j++)
         {
             int neighbor = neighbors[max_degree*i + j];
-            if(neighbor==-1)
-                break;
-            pair_count++;
+            if(neighbor>-1)
+            {
+                pair_count++;
+            }
         }
     }
     return pair_count;
@@ -195,6 +198,7 @@ __global__ void get_neighbors(float * dist_matrix,int * neighbor_table, int max_
             idx++;
         }
     }
+    __syncthreads();
 }
 
 __global__ void sum_rows(float * matrix,int * sum_arr,int length)
@@ -234,10 +238,14 @@ __global__ void sum_rows(float * matrix,int * sum_arr,int length)
         if (t < stride)
         partial_sum[t] += partial_sum[t+stride];
     }
+    __syncthreads();
+
     if(t==0)
     {
         atomicAdd(sum_arr+row,(int)partial_sum[0]);
     }
+    __syncthreads();
+
 }
 
 void colocate(vector<FlowData> flows,float frequency_threshold, float spatial_threshold, size_t shared_mem_size)
@@ -261,7 +269,8 @@ void colocate(vector<FlowData> flows,float frequency_threshold, float spatial_th
 	cudaMalloc((void**)&d_dy, length*sizeof(float));
 	cudaMalloc((void**)&d_L, length*sizeof(float));
     int class_lookup[length];
-    int class_frequency[flows.size()] = {0};
+    int * class_frequency = (int * )malloc(flows.size()*sizeof(int));
+    for(int i=0;i<flows.size();i++){class_lookup[i] = 0;}
 
     int start_idx = 0;
     for(int i=0;i<flows.size();i++)
@@ -272,6 +281,8 @@ void colocate(vector<FlowData> flows,float frequency_threshold, float spatial_th
         cudaMemcpy(d_dx + start_idx, flow.dx, flow.length*sizeof(float), cudaMemcpyHostToDevice);
         cudaMemcpy(d_dy + start_idx, flow.dy, flow.length*sizeof(float), cudaMemcpyHostToDevice);
         cudaMemcpy(d_L + start_idx, flow.L, flow.length*sizeof(float), cudaMemcpyHostToDevice);
+        printf("GPUassert: %s \n", cudaGetErrorString(cudaGetLastError()));
+
         for(int j=0;j<flow.length;j++)
         {
             class_lookup[start_idx+j] = i;
@@ -283,17 +294,14 @@ void colocate(vector<FlowData> flows,float frequency_threshold, float spatial_th
 	cudaMalloc((void**)&dist_matrix_gpu, length*length*sizeof(float));
 	cudaMemset(dist_matrix_gpu, 0, length*length*sizeof(float));
 
-    cout << "Starting Kernel" <<endl;
     calculate_spatial_distance_matrix <<< ceil((float)length/128) , 128, shared_mem_size >>> (d_sx,d_sy,d_dx,d_dy,d_L,dist_matrix_gpu,length,2,1.0f);
-    printf("GPUassert: %s \n", cudaGetErrorString(cudaGetLastError()));
     threshold_distance_matrix <<< ceil((float)length*length/128) , 128 >>>(dist_matrix_gpu,spatial_threshold,length);
-    printf("GPUassert: %s \n", cudaGetErrorString(cudaGetLastError()));
-    cudaFree(d_sx);
-    cudaFree(d_sy);
-    cudaFree(d_dx);
-    cudaFree(d_sx);
-    cudaFree(d_dy);
-
+    cudaFree((void**)&d_sx);
+    cudaFree((void**)&d_sy);
+    cudaFree((void**)&d_dx);
+    cudaFree((void**)&d_sx);
+    cudaFree((void**)&d_dy);
+    
 	
     // Get maximum degree of flow neighbor graph
     int * number_neighbors;
@@ -301,71 +309,99 @@ void colocate(vector<FlowData> flows,float frequency_threshold, float spatial_th
     cudaMalloc((void**)&number_neighbors, length*sizeof(int));
     number_neighbors_cpu = (int *)malloc( length*sizeof(int));
 	cudaMemset(number_neighbors, 0, length*sizeof(int));
-    sum_rows <<< ceil((float)length*length/128) , 128 >>>(dist_matrix_gpu,number_neighbors,length);
-	cudaMemcpy(number_neighbors_cpu, number_neighbors, length*sizeof(int), cudaMemcpyDeviceToHost);
-    int max_degree = number_neighbors_cpu[0];
-    for(int i=1;i<length;i++)
+
+    // sum_rows <<< ceil((float)(length*length)/(2*128)) , 128 >>>(dist_matrix_gpu,number_neighbors,length);
+
+    float * dist_matrix_cpu = (float*)malloc(length*length*sizeof(float));
+	cudaMemcpy(dist_matrix_cpu, dist_matrix_gpu, length*length*sizeof(float), cudaMemcpyDeviceToHost);
+
+    int max_degree = 0;
+    long int total = 0;
+    for(int i=0;i<length;i++)
     {
-        if(number_neighbors_cpu[i]>max_degree){max_degree=number_neighbors_cpu[i];}
+        int tmp = 0;
+        for(int j=0;j<length;j++)
+            tmp += dist_matrix_cpu[i*length + j];
+            total++;
+        if(tmp>max_degree)
+            max_degree = tmp;
     }
-
-    free(number_neighbors_cpu);
-    cudaFree(number_neighbors);
-
+	// cudaMemcpy(number_neighbors_cpu, number_neighbors, length*sizeof(int), cudaMemcpyDeviceToHost);
+    // int max_degree = number_neighbors_cpu[0];
+    // for(int i=1;i<length;i++)
+    // {
+    //     if(number_neighbors_cpu[i]>max_degree){max_degree=number_neighbors_cpu[i];}
+    // }
+    // free(number_neighbors_cpu);
+    // cudaFree(number_neighbors);
+    
     /*
     Initialize adjacency list structure
     */
     int * adj_list_gpu, *adj_list_cpu;
-    cudaMalloc((void**)&adj_list_gpu, length*max_degree*sizeof(int));
-	cudaMemset(number_neighbors, -1, length*max_degree*sizeof(int));
+    // cudaMalloc((void**)&adj_list_gpu, length*max_degree*sizeof(int));
+	// cudaMemset(number_neighbors, -1, length*max_degree*sizeof(int));
     adj_list_cpu = (int*)malloc(length*max_degree*sizeof(int));
-    get_neighbors<<< ceil((float)length/128) , 128 >>>(dist_matrix_gpu,adj_list_gpu, max_degree ,length);
-    free(dist_matrix_gpu);
-	cudaMemcpy(adj_list_cpu, adj_list_gpu, length*max_degree*sizeof(int), cudaMemcpyDeviceToHost);
+    // get_neighbors<<< ceil((float)length/128) , 128 >>>(dist_matrix_gpu,adj_list_gpu, max_degree ,length);
+    for(int i=0;i<length*max_degree;i++)
+        {adj_list_cpu[i] = -1;}
+    for(int i=0;i<length;i++)
+    {
+        int row = i*length;
+        int index = 0;
+        for(int j=0;j<max_degree;j++)
+        {
+            if(dist_matrix_cpu[row+j]>0)
+            {
+                if(class_lookup[j]!=class_lookup[i])
+                {
+                    adj_list_cpu[i*max_degree + index] = j;
+                    index++;
+                }
+            }
+        }
+    }
 
+    // cudaFree(dist_matrix_gpu);
+	// cudaMemcpy(adj_list_cpu, adj_list_gpu, length*max_degree*sizeof(int), cudaMemcpyDeviceToHost);
     /* Initialize k=1 table
     */
     int * members_, * features_, *neighbors_;
     int *members, *features, *neighbors;
+
     members = (int *)malloc(length*sizeof(int));
     features = (int *)malloc(length*sizeof(int));
     neighbors = (int *)malloc(max_degree*length*sizeof(int));
+
+    for(int i=0;i<max_degree*length;i++){neighbors[i] = -1;}
     int pair_count = 0;
+    
     for(int i=0;i<length;i++)
     {
+        int row = i*max_degree;
+        int index = 0;
         members[i] = i;
         features[i] = class_lookup[i];
-        int neighbor_idx = 0;
         for(int j=0;j<max_degree;j++)
         {
-            int neighbor = adj_list_cpu[i+j];
-            if(neighbor>i)
+            if(adj_list_cpu[row + j]>i)
             {
-                if(class_lookup[neighbor]!=class_lookup[i])
-                {
-                    neighbors[i*max_degree + neighbor_idx] = neighbor;
-                    neighbor_idx++;
-                    pair_count++;
-                    if(neighbor_idx!=max_degree)
-                    {
-                        neighbors[i*max_degree + neighbor_idx] = -1;
-                    }
-                }
-            }
-            else if (neighbor==-1)
-            {
-                break;
-                
+                pair_count++;
+                neighbors[i*max_degree+index] = adj_list_cpu[row+j];
+                index++;
             }
         }
     }
-    
+
+
+    cout << "Starting FCLP" << endl;
     /*
     Iteratively build FCLP tables
     */
     int pair_count_old=length;
     for(int k=2;k<flows.size();k++)
     {
+        cout << "Staring K=" << k << endl;
         members_ = members;
         features_ = features;
         neighbors_ = neighbors;
@@ -373,13 +409,19 @@ void colocate(vector<FlowData> flows,float frequency_threshold, float spatial_th
         members = (int *)malloc(k*pair_count*sizeof(int));
         features = (int *)malloc(k*pair_count*sizeof(int));
         neighbors = (int *)malloc(max_degree*pair_count*sizeof(int));
+        for(int i=0;i<max_degree*pair_count;i++){neighbors[i]=-1;}
+        cout << pair_count_old << " " << pair_count << endl;
         int table_length = build_fclp(members_,features_,neighbors_,members,features,neighbors,adj_list_cpu,k,pair_count_old,max_degree,class_lookup);
+        cout << " ping " << endl;
         table_length = purge_fclp(members,features,neighbors,frequency_threshold,k,max_degree,table_length,class_frequency);
         pair_count_old=table_length;
         pair_count = get_max_pair_count(neighbors,table_length,max_degree);
         if(pair_count==0)
         {
+            cout << "plateued" << endl;
             break;
         }
     }
+    cout << "Done" << endl;
+
 }

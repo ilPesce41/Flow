@@ -11,6 +11,7 @@
 #include "spatial_distance.cuh"
 #include "knn.hpp"
 #include "flow_k.cuh"
+#include "colocation.cuh"
 
 using namespace std;
 
@@ -25,13 +26,12 @@ int main(int argc, char **argv)
     // for (string col: columns){
     //     cout<<col<<" ";
     // }
-    const char * filename_1 = "/home/c/coleh/COP6527_project_3/data/Taxi/green_tripdata_2015-06_subset.csv";
-    const char * filename_2 = "/home/c/coleh/COP6527_project_3/data/Taxi/yellow_tripdata_2015-06_subset.csv";
-    string sx_col("Pickup_latitude");
-    string sy_col("Pickup_longitude");
-    string dx_col("Dropoff_latitude");
-    string dy_col("Dropoff_longitude");
-    string length_col("Trip_distance");
+    const char * filename_1 = "/home/ilpesce/Documents/computing_massively_parallel_sys/project_3/Taxi/yellow_tripdata_2015-06_subset.csv";
+    string sx_col("pickup_latitude");
+    string sy_col("pickup_longitude");
+    string dx_col("dropoff_latitude");
+    string dy_col("dropoff_longitude");
+    string length_col("trip_distance");
     int block_dim = 128;
     float alpha = 1.0; //weighting between origin and destination 1.0=even
     int func_type = 0; // 0=flow_distance, 1=flow_dissimilarity
@@ -39,7 +39,30 @@ int main(int argc, char **argv)
 
     cout << "Loading flows" << endl;
     FlowData flow_1(filename_1, sx_col, sy_col, dx_col, dy_col, length_col);
-    FlowData flow_2(filename_2, sx_col, sy_col, dx_col, dy_col, length_col);
+    flow_1.filter("passenger_count",0,1.5);
+    flow_1.apply_mask();
+    FlowData flow_2(filename_1, sx_col, sy_col, dx_col, dy_col, length_col);
+    flow_2.filter("passenger_count",1.5,2.5);
+    flow_2.apply_mask();
+    FlowData flow_3(filename_1, sx_col, sy_col, dx_col, dy_col, length_col);
+    flow_3.filter("passenger_count",2.5,3.5);
+    flow_3.apply_mask();
+    FlowData flow_4(filename_1, sx_col, sy_col, dx_col, dy_col, length_col);
+    flow_4.filter("passenger_count",3.5,4.5);
+    flow_4.apply_mask();
+    cout << flow_1.length << endl;
+    cout << flow_2.length << endl;
+    cout << flow_3.length << endl;
+
+
+    vector<FlowData> flows;
+    flows.push_back(flow_1);
+    flows.push_back(flow_2);
+    flows.push_back(flow_3);
+    flows.push_back(flow_4);
+    colocate(flows, 0.6, 0.01, shared_mem_size);
+
+    // FlowData flow_2(filename_2, sx_col, sy_col, dx_col, dy_col, length_col);
     
     /*
     Load Data
@@ -47,7 +70,7 @@ int main(int argc, char **argv)
     // FlowData flow(filename, sx_col, sy_col, dx_col, dy_col, length_col);
     // cout << "Loaded Data:" << flow.length <<endl;
 
-    // // copy data to GPU 
+    // copy data to GPU 
 	// float *d_sx, *d_sy, *d_dx, *d_dy, *d_L;
 	// cudaMalloc((void**)&d_sx, flow.length*sizeof(float));
 	// cudaMalloc((void**)&d_sy, flow.length*sizeof(float));
@@ -97,7 +120,7 @@ int main(int argc, char **argv)
     //     cout << endl;
     // }
 
-    // NN
+    // // NN
     // get_k_nearest_neighbors(5,0,flow.length,dist_matrix_cpu);
     
     //flow-k
@@ -110,4 +133,6 @@ int main(int argc, char **argv)
     // {
     //     cout << clusters[i] << endl;
     // }
+    // void colocate(vector<FlowData> flows,float frequency_threshold, float spatial_threshold, size_t shared_mem_size);
+
 }

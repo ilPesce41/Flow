@@ -1,10 +1,12 @@
 #include "feature_set.hpp"
+#include <iostream>
 
 FeatureSet::FeatureSet(int * features_, int k_)
 {
     k = k_;
     for(int i=0;i<k;i++)
     {
+        // std::cout << features_[i] << std::endl;
         features[i] = features_[i];
     }
 }
@@ -22,8 +24,8 @@ bool FeatureSet::is_equivalent(FeatureSet set)
                 in_list = true;
                 break;
             }
-        if(!in_list){return false;}
         }
+        if(!in_list){return false;}
     }
     return true;
 }
