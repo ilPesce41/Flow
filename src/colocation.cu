@@ -107,7 +107,7 @@ int purge_fclp(int *members,int *features,int *neighbors,float frequency_thresho
         {
             fci = min((float)feature_patterns_count[i]/class_frequency[set.features[j]],fci);
         }
-        cout << fci << endl;
+        // cout << fci << endl;
         if(fci<frequency_threshold)
         {
             bad_features.push_back(i);
@@ -396,7 +396,7 @@ ColocationResult colocate(vector<FlowData> flows,float frequency_threshold, floa
     int k_val=1;
     for(int k=2;k<flows.size()+1;k++)
     {
-        cout << k << " " << flows.size() << endl;
+        // cout << k << " " << flows.size() << endl;
         if(k>2)
         {
             free(members_);
@@ -409,7 +409,7 @@ ColocationResult colocate(vector<FlowData> flows,float frequency_threshold, floa
         members = (int *)malloc(k*pair_count*sizeof(int));
         features = (int *)malloc(k*pair_count*sizeof(int));
         neighbors = (int *)malloc(max_degree*pair_count*sizeof(int));
-        cout << max_degree*pair_count*sizeof(int) << endl;
+        // cout << max_degree*pair_count*sizeof(int) << endl;
         for(int i=0;i<max_degree*pair_count;i++){neighbors[i]=-1;}
         int table_length = build_fclp(members_,features_,neighbors_,members,features,neighbors,adj_list_cpu,k,pair_count_old,max_degree,class_lookup);
         table_length = purge_fclp(members,features,neighbors,frequency_threshold,k,max_degree,table_length,class_frequency);
