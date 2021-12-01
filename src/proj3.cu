@@ -98,7 +98,7 @@ void cross_flow_k(FlowData flow_1, FlowData flow_2, int num_iter, int func_type,
     vector<int> result = process_cross_flow_k(flow_1, flow_2, num_iter, func_type, alpha, shared_mem_size, radius);
     ofstream output_file;
     output_file.open(filename);
-    output_file << "sx,sy,dx,dy,L\n";
+    output_file << "class,sx,sy,dx,dy,L\n";
     bool in_flow_1 = true;
     for(int i=0;i<result.size();i++)
     {
@@ -106,12 +106,12 @@ void cross_flow_k(FlowData flow_1, FlowData flow_2, int num_iter, int func_type,
         if(res==-1)
         {
             in_flow_1=false;
-            output_file << "\n";
         }
         else
         {
             if(in_flow_1)
             {
+                output_file << "0,";
                 output_file << flow_1.sx[result[i]] << ",";
                 output_file << flow_1.sy[result[i]] << ",";
                 output_file << flow_1.dx[result[i]] << ",";
@@ -120,6 +120,7 @@ void cross_flow_k(FlowData flow_1, FlowData flow_2, int num_iter, int func_type,
             }
             else
             {
+                output_file << "1,";
                 output_file << flow_2.sx[result[i]] << ",";
                 output_file << flow_2.sy[result[i]] << ",";
                 output_file << flow_2.dx[result[i]] << ",";
@@ -138,8 +139,7 @@ void extract_colocation_patterns(vector<FlowData> flows,float frequency_threshol
     ColocationResult result = colocate(flows,frequency_threshold, spatial_threshold,shared_mem_size);
     ofstream output_file;
     output_file.open(filename);
-    output_file << "K = "<<result.k << "\n";
-    output_file << "index,class,sx,sy,dx,dy,L\n";
+    output_file << "index,class,sx,sy,dx,dy,L,k\n";
     int length = sizeof(result.indices)/sizeof(int);
     for(int i=0;i<result.length;i++)
     {
@@ -155,7 +155,8 @@ void extract_colocation_patterns(vector<FlowData> flows,float frequency_threshol
             output_file << flow.sy[index] << ",";
             output_file << flow.dx[index] << ",";
             output_file << flow.dy[index] << ",";
-            output_file << flow.L[index] << "\n";
+            output_file << flow.L[index] << ",";
+            output_file << result.k << "\n";
         }
     }
     cudaDeviceReset();
@@ -219,30 +220,30 @@ int main(int argc, char **argv)
         {
             check_arguments(tokens,2,line_number);
             int flow_index = stoi(tokens[1]);
-            if(flow_index>tokens.size()){cout<<"Invalid index on line "<<line_number<<" exiting."<<endl;exit(EXIT_FAILURE);}
+            if(flow_index>flows.size()){cout<<"Invalid index on line "<<line_number<<" exiting."<<endl;exit(EXIT_FAILURE);}
             flows[flow_index].apply_mask();
         }
         else if (tokens[0]=="knn")
         {
             check_arguments(tokens,7,line_number);
             int flow_index = stoi(tokens[1]);
-            if(flow_index>tokens.size()){cout<<"Invalid index on line "<<line_number<<" exiting."<<endl;exit(EXIT_FAILURE);}
+            if(flow_index>flows.size()){cout<<"Invalid index on line "<<line_number<<" exiting."<<endl;exit(EXIT_FAILURE);}
             knn(flows[flow_index],stoi(tokens[2]),stoi(tokens[3]),stoi(tokens[4]),stod(tokens[5]),tokens[6]);
         }
         else if (tokens[0]=="flow_k")
         {
             check_arguments(tokens,7,line_number);
             int flow_index = stoi(tokens[1]);
-            if(flow_index>tokens.size()){cout<<"Invalid index on line "<<line_number<<" exiting."<<endl;exit(EXIT_FAILURE);}
+            if(flow_index>flows.size()){cout<<"Invalid index on line "<<line_number<<" exiting."<<endl;exit(EXIT_FAILURE);}
             flow_k(flows[flow_index],stoi(tokens[2]),stoi(tokens[3]),stod(tokens[4]),stod(tokens[5]),tokens[6]);
         }
         else if (tokens[0]=="cross_flow_k")
         {
             check_arguments(tokens,8,line_number);
             int flow_index_1 = stoi(tokens[1]);
-            if(flow_index_1>tokens.size()){cout<<"Invalid index on line "<<line_number<<" exiting."<<endl;exit(EXIT_FAILURE);}
+            if(flow_index_1>flows.size()){cout<<"Invalid index on line "<<line_number<<" exiting."<<endl;exit(EXIT_FAILURE);}
             int flow_index_2 = stoi(tokens[2]);
-            if(flow_index_2>tokens.size()){cout<<"Invalid index on line "<<line_number<<" exiting."<<endl;exit(EXIT_FAILURE);}
+            if(flow_index_2>flows.size()){cout<<"Invalid index on line "<<line_number<<" exiting."<<endl;exit(EXIT_FAILURE);}
             cross_flow_k(flows[flow_index_1],flows[flow_index_2],stoi(tokens[3]),stoi(tokens[4]),stod(tokens[5]),stod(tokens[6]),tokens[7]);            
         }
         else if (tokens[0]=="colocation")

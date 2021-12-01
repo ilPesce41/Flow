@@ -9,12 +9,13 @@ import matplotlib.pyplot as plt
 import argparse
 
 def load_data_frame(filename):
+
     df=pd.read_csv(filename)
-    cols_to_keep=['pickup_longitude','pickup_latitude','dropoff_longitude','dropoff_latitude']
+    cols_to_keep=['pickup_longitude','pickup_latitude','dropoff_longitude','dropoff_latitude','class']
     df = df[df['pickup_longitude']<-10]
     df = df[df['dropoff_longitude']<-10]
     crs={'init':'epsg:4326'}
-    df = df[df.columns.intersection(cols_to_keep)] 
+    df = df[df.columns.intersection(cols_to_keep)]
     geometry = [LineString([Point(x,y),Point(z,w)]) for x,y,z,w in zip( df["pickup_longitude"],df["pickup_latitude"],df["dropoff_longitude"],df["dropoff_latitude"])]
     df['geometry']=geometry
     geo_df=geopandas.GeoDataFrame(df,crs=crs,)
@@ -22,7 +23,7 @@ def load_data_frame(filename):
 
 def load_single(filename):
     df=pd.read_csv(filename)
-    cols_to_keep=['sx','sy','dx','dy']
+    cols_to_keep=['sx','sy','dx','dy','class']
 
     df = df[df['sy']<-10]
     df = df[df['dy']<-10]
@@ -45,7 +46,9 @@ def main(args):
     all.plot(ax=ax[0],markersize=200, alpha=0.4,color="green")
 
     boroughs_2.plot(ax=ax[1],alpha=0.4,color="grey")
-    single.plot(ax=ax[1],markersize=200, alpha=0.4,color="green")
+    colors = ['red','green','blue','magenta','orange','yello']
+    for i,class_val in enumerate(single['class'].unique()):
+        single[single['class']==class_val].plot(ax=ax[1],markersize=200, alpha=0.4,color=colors[i])
     plt.show()
 
 if __name__ == "__main__":
