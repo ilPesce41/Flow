@@ -45,15 +45,15 @@ KNNResult get_k_nearest_neighbors(int k,int flow_idx,int length,float * distance
     float distances[k+1];
     for(int i=0;i<k+1;i++)
     {
-        neighbors[i] = i;
-        distances[i] = distance_matrix[i];
+        neighbors[i] = 1000;
+        distances[i] = 1000;
     }
-    insertion_sort(distances,neighbors,k+1);
-    for(int i=k;i<length;i++)
+    
+    for(int i=0;i<length;i++)
     {
-        if(distance_matrix[i]<distances[k-1])
+        if(distance_matrix[flow_idx*length+i]<distances[k-1] && distance_matrix[flow_idx*length+i]>0) //ignore self
         {
-            distances[k] = distance_matrix[i];
+            distances[k] = distance_matrix[flow_idx*length+i];
             neighbors[k] = i;
             insertion_sort(distances,neighbors,k+1);
         }

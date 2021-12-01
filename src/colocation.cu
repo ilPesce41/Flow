@@ -105,8 +105,9 @@ int purge_fclp(int *members,int *features,int *neighbors,float frequency_thresho
         float fci = (float)feature_patterns_count[i]/class_frequency[set.features[0]];
         for(int j=1;j<k;j++)
         {
-            fci = min((float)feature_patterns_count[i]/class_frequency[set.features[0]],fci);
+            fci = min((float)feature_patterns_count[i]/class_frequency[set.features[j]],fci);
         }
+        cout << fci << endl;
         if(fci<frequency_threshold)
         {
             bad_features.push_back(i);
@@ -116,7 +117,7 @@ int purge_fclp(int *members,int *features,int *neighbors,float frequency_thresho
     int idx = 0;
     for(int i=0;i<table_length;i++)
     {
-        if (find(bad_features.begin(), bad_features.end(), feature_index[idx]) != bad_features.end()) {
+        if (find(bad_features.begin(), bad_features.end(), feature_index[i]) != bad_features.end()) {
             //do nothing
         }
         else {
@@ -290,6 +291,7 @@ ColocationResult colocate(vector<FlowData> flows,float frequency_threshold, floa
             index_lookup[start_idx+j] = j;
             class_frequency[i]++;
         }
+        start_idx += flow.length;
     }
 
     float * dist_matrix_gpu;
@@ -398,9 +400,10 @@ ColocationResult colocate(vector<FlowData> flows,float frequency_threshold, floa
     Iteratively build FCLP tables
     */
     int pair_count_old=length;
-    int k_val=2;
+    int k_val=1;
     for(int k=2;k<flows.size()+1;k++)
     {
+        cout << k << " " << flows.size() << endl;
         if(k>2)
         {
             free(members_);
@@ -410,14 +413,14 @@ ColocationResult colocate(vector<FlowData> flows,float frequency_threshold, floa
         members_ = members;
         features_ = features;
         neighbors_ = neighbors;
-
         members = (int *)malloc(k*pair_count*sizeof(int));
         features = (int *)malloc(k*pair_count*sizeof(int));
         neighbors = (int *)malloc(max_degree*pair_count*sizeof(int));
+        cout << max_degree*pair_count*sizeof(int) << endl;
         for(int i=0;i<max_degree*pair_count;i++){neighbors[i]=-1;}
         int table_length = build_fclp(members_,features_,neighbors_,members,features,neighbors,adj_list_cpu,k,pair_count_old,max_degree,class_lookup);
         table_length = purge_fclp(members,features,neighbors,frequency_threshold,k,max_degree,table_length,class_frequency);
-        pair_count_old=table_length;
+        pair_count_old=pair_count;
         pair_count = get_max_pair_count(neighbors,table_length,max_degree);
         if(pair_count==0)
         {
@@ -425,11 +428,12 @@ ColocationResult colocate(vector<FlowData> flows,float frequency_threshold, floa
             break;
         }else{k_val++;}
     }
-
     ColocationResult result(k_val);
     result.indices = members_;
     result.class_lookup = class_lookup;
     result.index_lookup = index_lookup;
-    result.length = pair_count_old;
+    result.length = k_val*pair_count_old;
+    result.flow_length = length;
+    cout << " here?"<<endl;
     return result;
 }

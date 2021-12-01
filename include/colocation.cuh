@@ -10,6 +10,7 @@ class ColocationResult{
         int * indices;
         int * class_lookup;
         int * index_lookup;
+        int flow_length;
         int length;
 };
 

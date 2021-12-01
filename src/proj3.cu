@@ -140,19 +140,23 @@ void extract_colocation_patterns(vector<FlowData> flows,float frequency_threshol
     output_file.open(filename);
     output_file << "K = "<<result.k << "\n";
     output_file << "index,class,sx,sy,dx,dy,L\n";
+    int length = sizeof(result.indices)/sizeof(int);
     for(int i=0;i<result.length;i++)
     {
         int index = result.indices[i];
-        int class_val = result.class_lookup[index];
-        index = result.index_lookup[index];
-        output_file << index << ",";
-        output_file << class_val << ",";
-        FlowData flow = flows[class_val];
-        output_file << flow.sx[index] << ",";
-        output_file << flow.sy[index] << ",";
-        output_file << flow.dx[index] << ",";
-        output_file << flow.dy[index] << ",";
-        output_file << flow.L[index] << "\n";
+        if(index<result.flow_length && index>=0)
+        {
+            int class_val = result.class_lookup[index];
+            index = result.index_lookup[index];
+            output_file << index << ",";
+            output_file << class_val << ",";
+            FlowData flow = flows[class_val];
+            output_file << flow.sx[index] << ",";
+            output_file << flow.sy[index] << ",";
+            output_file << flow.dx[index] << ",";
+            output_file << flow.dy[index] << ",";
+            output_file << flow.L[index] << "\n";
+        }
     }
     cudaDeviceReset();
 }

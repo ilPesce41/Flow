@@ -1,5 +1,5 @@
 proj3: flow.o utils.o knn.o feature_set.o
-	nvcc ./src/colocation.cu ./src/flow_k.cu ./src/spatial_distance.cu ./src/proj3.cu csv.o flow.o utils.o knn.o feature_set.o -lineinfo -o proj3 -I ./include
+	nvcc -g ./src/colocation.cu ./src/flow_k.cu ./src/spatial_distance.cu ./src/proj3.cu csv.o flow.o utils.o knn.o feature_set.o -lineinfo -o proj3 -I ./include
 
 flow.o: csv.o
 	g++ -c ./src/flow.cpp -I ./include
