@@ -1,3 +1,10 @@
+Cole Hill
+University of South Florida
+Computer Science and Engineering
+Programming Massively Parallel Systems
+Fall 2021
+
+
 This program runs various flow analysis functions on individual flows.
 To run this program execute the following command in a terminal on a machine with CUDA
 enabled:
@@ -6,6 +13,18 @@ enabled:
 
 This code can be build by running:
     make clean && make
+
+
+All source files are contained in the `src` folder, headers located in `include`.
+File Overviews:
+    Data Loading: csv.hpp,flow.hpp
+    K-Nearest neigbors: knn.hpp
+    Spatial Distance Matrix Calculation: spatial_distance.cuh
+    Ripley's K Flow and Cross K: flow_k.hpp
+    Spatial Colocation Patters: colocation.cuh
+    Argument parsing and main loop: proj3.cpp
+Source files are the same name with the .cpp(.hpp) and .cu(.cuh) extensions
+
 
 Two data visualization scripts are also included:
 

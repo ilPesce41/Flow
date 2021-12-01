@@ -1,3 +1,10 @@
+/*
+Cole Hill
+University of South Florida
+Computer Science and Engineering
+Programming Massively Parallel Systems
+Fall 2021
+*/
 #include <iostream>
 #include <math.h>
 #include "flow_k.cuh"

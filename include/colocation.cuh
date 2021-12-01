@@ -1,3 +1,10 @@
+/*
+Cole Hill
+University of South Florida
+Computer Science and Engineering
+Programming Massively Parallel Systems
+Fall 2021
+*/
 #pragma once
 #include <vector>
 #include "flow.hpp"

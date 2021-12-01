@@ -1,3 +1,10 @@
+/*
+Cole Hill
+University of South Florida
+Computer Science and Engineering
+Programming Massively Parallel Systems
+Fall 2021
+*/
 #include "csv.hpp"
 #include <string>
 #pragma once

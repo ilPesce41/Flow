@@ -1,3 +1,10 @@
+/*
+Cole Hill
+University of South Florida
+Computer Science and Engineering
+Programming Massively Parallel Systems
+Fall 2021
+*/
 #pragma once
 
 __device__ float flow_distance(float alpha, float xi, float yi, float ui, float vi,float xj, float yj, float uj, float vj);
