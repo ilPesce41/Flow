@@ -105,7 +105,7 @@ __global__ void shuffle_label(float * d_sx, float * d_sy, float * d_dx, float * 
     __syncthreads();
 }
 
-std::vector<int> process_flow_k(FlowData flow, float *d_sx, float *d_sy, float *d_dx, float *d_dy, float *d_L, float * dist_matrix_cpu, float * dist_matrix_gpu, int num_iter, int func_type,float alpha,size_t shared_mem_size,float radius)
+std::vector<int> process_flow_k(FlowData flow, float *d_sx, float *d_sy, float *d_dx, float *d_dy, float *d_L, float * dist_matrix_gpu, int num_iter, int func_type,float alpha,size_t shared_mem_size,float radius)
 { 
 
     float * sig_vec_real;
@@ -207,13 +207,13 @@ std::vector<int> process_cross_flow_k(FlowData flow_1, FlowData flow_2, int num_
     float min_y = min(flow_1.min_y,flow_2.min_y);
     float A = (max_x-min_x)*(max_y-min_y);
 
-    std::cout << "Area: " << A << std::endl;
+    // std::cout << "Area: " << A << std::endl;
     float * dist_matrix_gpu;
 	cudaMalloc((void**)&dist_matrix_gpu, length*length*sizeof(float));
 	cudaMemset(dist_matrix_gpu, 0, length*length*sizeof(float));
 
     calculate_spatial_distance_matrix <<< ceil((float)length/128) , 128, shared_mem_size >>> (d_sx,d_sy,d_dx,d_dy,d_L,dist_matrix_gpu,length,func_type,alpha);
-    printf("GPUassert: %s \n", cudaGetErrorString(cudaGetLastError()));
+    // printf("GPUassert: %s \n", cudaGetErrorString(cudaGetLastError()));
 
     float * sig_vec;
     cudaMalloc((void**)&sig_vec, length*sizeof(float));

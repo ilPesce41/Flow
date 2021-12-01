@@ -281,7 +281,7 @@ void colocate(vector<FlowData> flows,float frequency_threshold, float spatial_th
         cudaMemcpy(d_dx + start_idx, flow.dx, flow.length*sizeof(float), cudaMemcpyHostToDevice);
         cudaMemcpy(d_dy + start_idx, flow.dy, flow.length*sizeof(float), cudaMemcpyHostToDevice);
         cudaMemcpy(d_L + start_idx, flow.L, flow.length*sizeof(float), cudaMemcpyHostToDevice);
-        printf("GPUassert: %s \n", cudaGetErrorString(cudaGetLastError()));
+        // printf("GPUassert: %s \n", cudaGetErrorString(cudaGetLastError()));
 
         for(int j=0;j<flow.length;j++)
         {

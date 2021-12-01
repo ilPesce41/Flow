@@ -15,7 +15,7 @@ class FlowData{
         long int length_;
 
     public:
-        FlowData(const char* filename, string sx_col, string sy_col, string dx_col, string dy_col, string length_col);
+        FlowData(string filename, string sx_col, string sy_col, string dx_col, string dy_col, string length_col);
         long int length;
         float * sx;
         float * sy;

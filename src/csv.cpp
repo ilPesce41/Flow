@@ -11,7 +11,7 @@ using namespace std;
 /*
 Initializer function
 */
-CSVParser::CSVParser(const char* filename_) {
+CSVParser::CSVParser(string filename_) {
     filename = filename_;
     columns = get_columns();
     length = get_column_data(columns[0]).size();
@@ -51,6 +51,7 @@ vector<string> CSVParser::get_columns(){
         cout<< "Exiting"<< endl;
         exit(EXIT_FAILURE);
     }
+    input_stream.close();
 }  
 
 /*

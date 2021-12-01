@@ -8,12 +8,12 @@ Class for Parsing Data from CSV Files
 class CSVParser
 {
     private:
-        const char * filename;
+        string filename;
         vector<string> parse_line(string line);
         vector<string> columns;
 
     public:
-        CSVParser(const char* filename);
+        CSVParser(string filename);
         vector<string> get_columns();
         vector<string> get_column_data(string column_name);
         long int length;

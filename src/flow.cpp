@@ -3,7 +3,7 @@
 #include "utils.hpp"
 #include <iostream>
 using namespace std;
-FlowData::FlowData(const char* filename, string sx_col, string sy_col, string dx_col, string dy_col, string length_col)
+FlowData::FlowData(string filename, string sx_col, string sy_col, string dx_col, string dy_col, string length_col)
 {
     parser = new CSVParser(filename);
     length_ = parser->length;

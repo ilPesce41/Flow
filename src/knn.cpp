@@ -30,7 +30,7 @@ void insertion_sort(float * dist, int * indices,int len)
 }
 
 /*
-Naiive KNN on CPU using distance matrix
+Naiive KNN on CPU using distance matrix from GPU
 */
 void get_k_nearest_neighbors(int k,int flow_idx,int length,float * distance_matrix)
 {
@@ -56,3 +56,4 @@ void get_k_nearest_neighbors(int k,int flow_idx,int length,float * distance_matr
         cout << i << " Distance: " << distances[i] << " Index: " << neighbors[i]<< endl;
     }
 }
+
