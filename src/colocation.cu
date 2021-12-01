@@ -424,6 +424,16 @@ ColocationResult colocate(vector<FlowData> flows,float frequency_threshold, floa
         pair_count = get_max_pair_count(neighbors,table_length,max_degree);
         if(pair_count==0)
         {
+            if(table_length>0)
+            {
+                pair_count_old = table_length;
+                free(members_);
+                free(features_);
+                free(neighbors_);
+                members_ = members;
+                features_ = features;
+                neighbors_ = neighbors;
+            }
             cout << "plateued" << endl;
             break;
         }else{k_val++;}
