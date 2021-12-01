@@ -4,6 +4,19 @@ enabled:
 
     ./proj3 config.txt
 
+This code can be build by running:
+    make clean && make
+
+Two data visualization scripts are also included:
+
+    visualize.py
+    visualize_multi.py
+
+They both are run in the command line as: python {script_name}.py {raw_data_file}.csv {output_data_file}.csv
+A conda environment with dependences is included in `env.yaml`
+
+    vizualize.py - KNN/flow_k
+    vizualize_multi.py - cross_flow_k/colocation
 
 Configuration File Options
 
@@ -63,10 +76,10 @@ Configuration File Options
 Example Configuration File
 ---------------------------------
 
-load tmp1.csv pickup_latitude pickup_longitude dropoff_latitude dropoff_longitude trip_distance
-load tmp1.csv pickup_latitude pickup_longitude dropoff_latitude dropoff_longitude trip_distance
-load tmp1.csv pickup_latitude pickup_longitude dropoff_latitude dropoff_longitude trip_distance
-load tmp1.csv pickup_latitude pickup_longitude dropoff_latitude dropoff_longitude trip_distance
+load yellow_taxi_data_cleaned.csv pickup_latitude pickup_longitude dropoff_latitude dropoff_longitude trip_distance
+load yellow_taxi_data_cleaned.csv pickup_latitude pickup_longitude dropoff_latitude dropoff_longitude trip_distance
+load yellow_taxi_data_cleaned.csv pickup_latitude pickup_longitude dropoff_latitude dropoff_longitude trip_distance
+load yellow_taxi_data_cleaned.csv pickup_latitude pickup_longitude dropoff_latitude dropoff_longitude trip_distance
 filter 0 passenger_count 0.0 2.9
 filter 1 passenger_count 3.1 4.9
 filter 2 passenger_count 20 31.99
