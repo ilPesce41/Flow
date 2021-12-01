@@ -1,2 +1,14 @@
 load tmp1.csv pickup_latitude pickup_longitude dropoff_latitude dropoff_longitude trip_distance
+load tmp1.csv pickup_latitude pickup_longitude dropoff_latitude dropoff_longitude trip_distance
+load tmp1.csv pickup_latitude pickup_longitude dropoff_latitude dropoff_longitude trip_distance
+load tmp1.csv pickup_latitude pickup_longitude dropoff_latitude dropoff_longitude trip_distance
+filter 0 passenger_count 0.0 2.9
+filter 1 passenger_count 3.1 4.9
+filter 2 passenger_count 20 31.99
+apply 0 
+apply 1
+apply 2
+knn 0 5 1 0 1.0 knn_out.csv
 flow_k 0 1000 0 1 .0001 flow_k_out.csv
+cross_flow_k 0 1 1000 0 1.0 .1 cross_flow_k.csv
+colocation 0.1 .01 colocation_out.csv

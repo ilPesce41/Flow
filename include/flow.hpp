@@ -3,6 +3,10 @@
 #pragma once
 
 using namespace std;
+/*
+Class for loading and manipulating flow data from
+a csv file
+*/
 class FlowData{
     private:
         CSVParser * parser;

@@ -1,5 +1,8 @@
 #pragma once
 
+/*
+Class for holding feature sets and comparing them
+*/
 class FeatureSet{
     public:
     int k;

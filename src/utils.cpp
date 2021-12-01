@@ -5,6 +5,9 @@
 
 using namespace std;
 
+/*
+Convert vector of strings to a float array
+*/
 void convert_vec_float(vector<string> vec, float * output)
 {
     for(int i=0;i<vec.size();i++)
@@ -13,6 +16,9 @@ void convert_vec_float(vector<string> vec, float * output)
     }
 }
 
+/*
+Apply a mask to an array
+*/
 void mask_array(float * input_array, float * output_array, int * mask_array, int length)
 {
     int idx = 0;
@@ -26,6 +32,9 @@ void mask_array(float * input_array, float * output_array, int * mask_array, int
     }
 }
 
+/*
+Get min of array
+*/
 float get_min(float * arr,int length)
 {
     float min_value = arr[0];
@@ -37,6 +46,9 @@ float get_min(float * arr,int length)
     return min_value;
 }
 
+/*
+Get min of array
+*/
 float get_min(float * arr,int start, int stop)
 {
     float min_value = arr[0];
@@ -48,6 +60,9 @@ float get_min(float * arr,int start, int stop)
     return min_value;
 }
 
+/*
+Get max of array
+*/
 float get_max(float * arr,int length)
 {
     float max_value = arr[0];
@@ -59,7 +74,9 @@ float get_max(float * arr,int length)
     return max_value;
 }
 
-
+/*
+Get max of array
+*/
 float get_max(float * arr,int start, int stop)
 {
     float max_value = arr[0];

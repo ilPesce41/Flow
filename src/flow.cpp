@@ -3,6 +3,11 @@
 #include "utils.hpp"
 #include <iostream>
 using namespace std;
+/*
+Initializer
+filename is cv file
+sx/sy/dx/dy/length_col are the column labels in the csv file for the start/dest positions and flow lengths
+*/
 FlowData::FlowData(string filename, string sx_col, string sy_col, string dx_col, string dy_col, string length_col)
 {
     parser = new CSVParser(filename);
@@ -31,6 +36,7 @@ FlowData::FlowData(string filename, string sx_col, string sy_col, string dx_col,
     
 }
 
+//Calculate rectangular area flows occupy
 void FlowData::update_bounds()
 {
     float min_sx = get_min(sx, length);
@@ -49,6 +55,9 @@ void FlowData::update_bounds()
     area = (max_x-min_x)*(max_y-min_y);
 }
 
+/*
+Apply filter masks to the flow data
+*/
 void FlowData::apply_mask()
 {
     length=0;
@@ -76,6 +85,9 @@ void FlowData::apply_mask()
     update_bounds();
 }
 
+/*
+Remove all filters from mask
+*/
 void FlowData::clear_mask()
 {
     for(int i=0;i<length_;i++)
@@ -84,6 +96,9 @@ void FlowData::clear_mask()
     }
 }
 
+/*
+Create mask array based on filter of attribute column
+*/
 void FlowData::filter(string column,float lb, float ub)
 {
 

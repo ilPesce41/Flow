@@ -2,6 +2,9 @@
 
 void insertion_sort(float * dist, int * indices,int len);
 
+/*
+Class for passing k-nearest neighbors results
+*/
 class KNNResult{
     
     public:

@@ -328,14 +328,6 @@ ColocationResult colocate(vector<FlowData> flows,float frequency_threshold, floa
         if(tmp>max_degree)
             max_degree = tmp;
     }
-	// cudaMemcpy(number_neighbors_cpu, number_neighbors, length*sizeof(int), cudaMemcpyDeviceToHost);
-    // int max_degree = number_neighbors_cpu[0];
-    // for(int i=1;i<length;i++)
-    // {
-    //     if(number_neighbors_cpu[i]>max_degree){max_degree=number_neighbors_cpu[i];}
-    // }
-    // free(number_neighbors_cpu);
-    // cudaFree(number_neighbors);
     
     /*
     Initialize adjacency list structure
@@ -366,6 +358,7 @@ ColocationResult colocate(vector<FlowData> flows,float frequency_threshold, floa
 
     // cudaFree(dist_matrix_gpu);
 	// cudaMemcpy(adj_list_cpu, adj_list_gpu, length*max_degree*sizeof(int), cudaMemcpyDeviceToHost);
+    
     /* Initialize k=1 table
     */
     int * members_, * features_, *neighbors_;
@@ -434,7 +427,6 @@ ColocationResult colocate(vector<FlowData> flows,float frequency_threshold, floa
                 features_ = features;
                 neighbors_ = neighbors;
             }
-            cout << "plateued" << endl;
             break;
         }else{k_val++;}
     }
@@ -444,6 +436,5 @@ ColocationResult colocate(vector<FlowData> flows,float frequency_threshold, floa
     result.index_lookup = index_lookup;
     result.length = k_val*pair_count_old;
     result.flow_length = length;
-    cout << " here?"<<endl;
     return result;
 }

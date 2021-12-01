@@ -3,6 +3,9 @@
 #include "flow.hpp"
 using namespace std;
 
+/*
+Class for exporting results of colocation algorithm
+*/
 class ColocationResult{
     public:
         ColocationResult(int k_){k=k_;};

@@ -16,15 +16,18 @@
 #include<sstream>
 
 #define BLOCK_DIM 128
-
 using namespace std;
 
+
+/*
+Find KNN of a flow in a dataset of flows
+*/
 void knn(FlowData flow, int k, int flow_idx,int func_type, float alpha,string filename)
 {
     cudaDeviceReset();
+    // Copy flow data to GPU
     float *d_sx, *d_sy, *d_dx, *d_dy, *d_L;
     size_t shared_mem_size = 10*BLOCK_DIM*sizeof(float);
-
 	cudaMalloc((void**)&d_sx, flow.length*sizeof(float));
 	cudaMalloc((void**)&d_sy, flow.length*sizeof(float));
 	cudaMalloc((void**)&d_dx, flow.length*sizeof(float));
@@ -36,16 +39,19 @@ void knn(FlowData flow, int k, int flow_idx,int func_type, float alpha,string fi
 	cudaMemcpy(d_dy, flow.dy, flow.length*sizeof(float), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_L, flow.L, flow.length*sizeof(float), cudaMemcpyHostToDevice);
     
+    // Calculate spatial distance matrix
     float * dist_matrix_gpu;
 	cudaMalloc((void**)&dist_matrix_gpu, flow.length*flow.length*sizeof(float));
 	cudaMemset(dist_matrix_gpu, 0, flow.length*flow.length*sizeof(float));
-
     calculate_spatial_distance_matrix <<< ceil((float)flow.length/BLOCK_DIM) , BLOCK_DIM, shared_mem_size >>> (d_sx,d_sy,d_dx,d_dy,d_L,dist_matrix_gpu,flow.length,func_type,alpha);
 
+    // Copy distance matrix back to CPU
     float * dist_matrix_cpu = (float*)malloc(flow.length*flow.length*sizeof(float));
 	cudaMemcpy(dist_matrix_cpu, dist_matrix_gpu, flow.length*flow.length*sizeof(float), cudaMemcpyDeviceToHost);
+    // Get KNN
     KNNResult result = get_k_nearest_neighbors(k, flow_idx, flow.length, dist_matrix_cpu);
 
+    // Output KNN to csv file
     ofstream output_file;
     output_file.open(filename);
     output_file << "sx,sy,dx,dy,L,distance\n";
@@ -61,9 +67,13 @@ void knn(FlowData flow, int k, int flow_idx,int func_type, float alpha,string fi
     cudaDeviceReset();
 }
 
+/*
+Find flow clusters using ripleys k value
+*/
 void flow_k(FlowData flow, int num_iter, int func_type,float alpha,float radius,string filename)
 {
     cudaDeviceReset();
+    // Copy flow data to GPU
     float *d_sx, *d_sy, *d_dx, *d_dy, *d_L;
     size_t shared_mem_size = 10*BLOCK_DIM*sizeof(float);
     cudaMalloc((void**)&d_sx, flow.length*sizeof(float));
@@ -72,11 +82,15 @@ void flow_k(FlowData flow, int num_iter, int func_type,float alpha,float radius,
 	cudaMalloc((void**)&d_dy, flow.length*sizeof(float));
 	cudaMalloc((void**)&d_L, flow.length*sizeof(float));
 
+    // Allocate space for spatial distance matrix on GPU
     float * dist_matrix_gpu;
 	cudaMalloc((void**)&dist_matrix_gpu, flow.length*flow.length*sizeof(float));
 	cudaMemset(dist_matrix_gpu, 0, flow.length*flow.length*sizeof(float));
-
+    
+    // Calcuate flow clusters
     vector<int> result = process_flow_k(flow, d_sx, d_sy, d_dx, d_dy, d_L, dist_matrix_gpu, num_iter, func_type, alpha, shared_mem_size, radius);
+    
+    // Output flow clusters to CSV file
     ofstream output_file;
     output_file.open(filename);
     output_file << "sx,sy,dx,dy,L\n";
@@ -91,11 +105,17 @@ void flow_k(FlowData flow, int num_iter, int func_type,float alpha,float radius,
     cudaDeviceReset();
 }
 
+/*
+Find cross flow clusters using ripleys k value
+*/
 void cross_flow_k(FlowData flow_1, FlowData flow_2, int num_iter, int func_type,float alpha,float radius,string filename)
 {
     cudaDeviceReset();
     size_t shared_mem_size = 10*BLOCK_DIM*sizeof(float);
+    // Calculate cross flow k values
     vector<int> result = process_cross_flow_k(flow_1, flow_2, num_iter, func_type, alpha, shared_mem_size, radius);
+    
+    // Output significant cross flows to csv file
     ofstream output_file;
     output_file.open(filename);
     output_file << "class,sx,sy,dx,dy,L\n";
@@ -132,6 +152,9 @@ void cross_flow_k(FlowData flow_1, FlowData flow_2, int num_iter, int func_type,
     cudaDeviceReset();
 }
 
+/*
+Extract multivariate flow colocation patterns
+*/
 void extract_colocation_patterns(vector<FlowData> flows,float frequency_threshold, float spatial_threshold,string filename)
 {
     cudaDeviceReset();
@@ -162,6 +185,9 @@ void extract_colocation_patterns(vector<FlowData> flows,float frequency_threshol
     cudaDeviceReset();
 }
 
+/*
+Assert number of arguments in configuration file is correct
+*/
 void check_arguments(vector<string> args,int number,int line)
 {
     if (args.size()<number)
@@ -175,13 +201,17 @@ void check_arguments(vector<string> args,int number,int line)
 int main(int argc, char **argv)
 {
 
+    // Check configuraiton file is provided
     if(argc!=2)
     {
         cout << "Invalid Arguments. Exiting..." << endl;
         exit(1);
     }
 
+    // Initialize flow vector
     vector<FlowData> flows;
+
+    //Open configuration file
     ifstream config_file;
     config_file.open(argv[1]);
     if(config_file.fail())
@@ -190,6 +220,8 @@ int main(int argc, char **argv)
         exit(1);
     }
 
+    // Iterate through configuration file line by line
+    // Perform each command as supplied
     string line;
     int line_number = 1;
     while(getline(config_file,line))
@@ -203,12 +235,15 @@ int main(int argc, char **argv)
             tokens.push_back(substr);
         }
         if(tokens.size()==0){continue;line_number++;}
+        
+        // load flow csv
         if(tokens[0]=="load")
         {
             check_arguments(tokens,7,line_number);
             FlowData flow = FlowData(tokens[1],tokens[2],tokens[3],tokens[4],tokens[5],tokens[6]);
             flows.push_back(flow);
         }
+        // add filter to flow file
         else if (tokens[0]=="filter")
         {
             check_arguments(tokens,5,line_number);
@@ -216,6 +251,8 @@ int main(int argc, char **argv)
             if(flow_index>tokens.size()){cout<<"Invalid index on line "<<line_number<<" exiting."<<endl;exit(EXIT_FAILURE);}
             flows[flow_index].filter(tokens[2],stod(tokens[3]),stod(tokens[4]));
         }
+        
+        // activate filters on flow file
         else if (tokens[0]=="apply")
         {
             check_arguments(tokens,2,line_number);
@@ -223,6 +260,8 @@ int main(int argc, char **argv)
             if(flow_index>flows.size()){cout<<"Invalid index on line "<<line_number<<" exiting."<<endl;exit(EXIT_FAILURE);}
             flows[flow_index].apply_mask();
         }
+        
+        // find knn for a flow in flow file
         else if (tokens[0]=="knn")
         {
             check_arguments(tokens,7,line_number);
@@ -230,6 +269,8 @@ int main(int argc, char **argv)
             if(flow_index>flows.size()){cout<<"Invalid index on line "<<line_number<<" exiting."<<endl;exit(EXIT_FAILURE);}
             knn(flows[flow_index],stoi(tokens[2]),stoi(tokens[3]),stoi(tokens[4]),stod(tokens[5]),tokens[6]);
         }
+        
+        // find flow clusters in flow file
         else if (tokens[0]=="flow_k")
         {
             check_arguments(tokens,7,line_number);
@@ -237,6 +278,8 @@ int main(int argc, char **argv)
             if(flow_index>flows.size()){cout<<"Invalid index on line "<<line_number<<" exiting."<<endl;exit(EXIT_FAILURE);}
             flow_k(flows[flow_index],stoi(tokens[2]),stoi(tokens[3]),stod(tokens[4]),stod(tokens[5]),tokens[6]);
         }
+        
+        // find cross flow clusters in two flows
         else if (tokens[0]=="cross_flow_k")
         {
             check_arguments(tokens,8,line_number);
@@ -246,6 +289,8 @@ int main(int argc, char **argv)
             if(flow_index_2>flows.size()){cout<<"Invalid index on line "<<line_number<<" exiting."<<endl;exit(EXIT_FAILURE);}
             cross_flow_k(flows[flow_index_1],flows[flow_index_2],stoi(tokens[3]),stoi(tokens[4]),stod(tokens[5]),stod(tokens[6]),tokens[7]);            
         }
+        
+        // find flow colocation patterns in all loaded flows
         else if (tokens[0]=="colocation")
         {
             check_arguments(tokens,4,line_number);

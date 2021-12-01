@@ -3,6 +3,7 @@
 
 using namespace std;
 
+
 KNNResult::KNNResult(int k)
 {
     distances = (float *)malloc(k*sizeof(float));
@@ -41,6 +42,7 @@ Naiive KNN on CPU using distance matrix from GPU
 */
 KNNResult get_k_nearest_neighbors(int k,int flow_idx,int length,float * distance_matrix)
 {
+    // Initialize neighbor list with big values
     int neighbors[k+1];
     float distances[k+1];
     for(int i=0;i<k+1;i++)
@@ -49,6 +51,7 @@ KNNResult get_k_nearest_neighbors(int k,int flow_idx,int length,float * distance
         distances[i] = 1000;
     }
     
+    // Iterate through distance matrix and find nearest neighbors
     for(int i=0;i<length;i++)
     {
         if(distance_matrix[flow_idx*length+i]<distances[k-1] && distance_matrix[flow_idx*length+i]>0) //ignore self
@@ -58,6 +61,8 @@ KNNResult get_k_nearest_neighbors(int k,int flow_idx,int length,float * distance
             insertion_sort(distances,neighbors,k+1);
         }
     }
+
+    // Return KNN result
     KNNResult result(k);
     for (int i=0;i<k;i++)
     {
