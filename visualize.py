@@ -40,7 +40,7 @@ def main():
     boroughs_1 = geopandas.read_file(geoplot.datasets.get_path('nyc_boroughs'))
     boroughs_2 = geopandas.read_file(geoplot.datasets.get_path('nyc_boroughs'))
     all = load_data_frame('tmp1.csv')
-    single = load_single("knn_out.csv")
+    single = load_single("flow_k_out.csv")
 
     fig,ax=plt.subplots(1,2,figsize=(15,15))
     boroughs_1.plot(ax=ax[0],alpha=0.4,color="grey")

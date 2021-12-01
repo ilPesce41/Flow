@@ -10,6 +10,7 @@
 #include "utils.hpp"
 
 #define PI 3.1416
+#define BLOCK_DIM 128
 
 
 __device__ float local_k_function(float * distance_matrix,int index, float r,float A,int length)
@@ -113,11 +114,19 @@ std::vector<int> process_flow_k(FlowData flow, float *d_sx, float *d_sy, float *
     sig_vec_real = (float *)malloc(sizeof(float)*flow.length);
     sig_vec_cpu = (float *)malloc(sizeof(float)*flow.length);
 
+    cudaMemcpy(d_sx, flow.sx, flow.length*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_sy, flow.sy, flow.length*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_dx, flow.dx, flow.length*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_dy, flow.dy, flow.length*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_L, flow.L, flow.length*sizeof(float), cudaMemcpyHostToDevice);
+    calculate_spatial_distance_matrix <<< ceil((float)flow.length/BLOCK_DIM) , BLOCK_DIM, shared_mem_size >>> (d_sx,d_sy,d_dx,d_dy,d_L,dist_matrix_gpu,flow.length,func_type,alpha);
+
+
     float * sig_vec;
     cudaMalloc((void**)&sig_vec, flow.length*sizeof(float));
     calculate_k_function<<< ceil((float)flow.length/128) , 128 >>>(dist_matrix_gpu,sig_vec,radius,flow.area,flow.length);
 	cudaMemcpy(sig_vec_real, sig_vec, flow.length*sizeof(float), cudaMemcpyDeviceToHost);
-    
+
     //Generate synthetic data
     float upper_envelope, lower_envelope;
     for (int ii=0;ii<num_iter;ii++)
@@ -149,7 +158,7 @@ std::vector<int> process_flow_k(FlowData flow, float *d_sx, float *d_sy, float *
             lower_envelope = get_min(sig_vec_cpu,flow.length);
         }
     }
-    
+    cout << upper_envelope << endl;
     std::vector<int> output;
     for(int i=0;i<flow.length;i++)
     {
